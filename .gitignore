@@ -1,0 +1,8 @@
+__pycache__/
+.vscode/
+.git/
+config_dev.py
+config_live.py
+bot_dev.session
+bot_dev.session-journal
+todo.txt
