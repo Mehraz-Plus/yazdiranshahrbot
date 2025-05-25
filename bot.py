@@ -3,6 +3,7 @@ from telethon.tl.types import PeerUser
 from env import env
 from mongo import Mongo
 import polib
+import os
 
 # Environment detection
 if env == 'live':
@@ -32,11 +33,37 @@ else:
 
 
 @bot.on(events.NewMessage(pattern='/start', incoming=True))
-@bot.on(events.CallbackQuery(data=b'main_menu'))
 async def start(event):
-    welcome_msg = f"{msg.get('welcome')}.\n\n{msg.get('info')}."
+    welcome_msg = f"{msg.get('welcome')}.\n\n{msg.get('info')}.\n\n{msg.get('ready_to_receive')}"
     await event.respond(welcome_msg)
     raise events.StopPropagation
+
+
+@bot.on(events.NewMessage(incoming=True))
+async def forward_to_admin(event):
+    try:
+        for admin in config.admin_list:
+            await bot.forward_messages(admin, event.message)
+        await event.respond(f"{msg.get('thanks')}! {msg.get('sent_successfully')}.")
+    except Exception as e:
+        print(f"Failed to forward message: {e}")
+    raise events.StopPropagation
+
+
+#@bot.on(events.NewMessage(func=lambda e: e.media))
+async def handle_media(event):
+    try:
+        sender = await event.get_sender()
+        name = sender.username or sender.id
+
+        # Generate file path
+        file_path = os.path.join('DOWNLOAD_DIR', f"{event.id}") # TODO CHANGE
+
+        # Save the media
+        saved_path = await event.download_media(file_path)
+        await event.reply(f"✅ File saved to `{saved_path}`.")
+    except Exception as e:
+        await event.reply(f"⚠️ Failed to save file: {e}")
 
 
 # Connect to Telegram and run in a loop
